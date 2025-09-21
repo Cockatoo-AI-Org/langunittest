@@ -1,6 +1,6 @@
 [project]
 name = "langunittest"
-version = "0.1.1"
+version = "0.1.2"
 description = "LLM agent to facilitate the generation of unit test cases."
 authors = [
     {name = "johnklee",email = "puremonkey2001@yahoo.com.tw"}
