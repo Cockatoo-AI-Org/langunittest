@@ -502,7 +502,7 @@ def create_test_cases(
   }
 
 
-def get_project_root_path() -> dict[str, Any]:
+def get_project_root_path() -> Mapping[str, Any]:
   """Gets project root path.
 
   Returns:
