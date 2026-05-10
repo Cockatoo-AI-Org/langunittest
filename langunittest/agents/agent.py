@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 import asyncio  # noqa: F401
-
 from google.adk.agents import Agent
 from google.adk.agents.llm_agent import LlmAgent
 from google.adk.runners import Runner
@@ -14,6 +13,7 @@ from google.adk.sessions import Session
 from google.genai import types
 
 from langunittest.agents import tools as test_case_tools
+from langunittest.utils import cli
 
 
 _AGENT_INSTRUCTIONS = """
@@ -46,8 +46,8 @@ code.
 
 3.  **Core Actions:**
     * **Load Module:** Before writing tests, you must call `read_module_content`
-      to load the module's code. Another situation you need to load module is that
-      the users ask you to show them the source code of the module.
+      to load the module's code. Another situation you need to load module is
+      that the users ask you to show them the source code of the module.
     * **Load Existing Tests:** Always call `read_exist_test_cases` to load and
       incrementally update existing tests. Ignore this step if no test exist.
     * **Write Tests:** After generating the tests, call `write_test_cases` to
@@ -62,7 +62,7 @@ code.
       passes or fails.
 """
 
-_AGENT_MODEL = 'gemini-2.0-flash'
+_AGENT_MODEL = 'gemini-2.5-flash'
 _TOOLS = (
     test_case_tools.read_exist_test_cases,
     test_case_tools.read_module_content,
@@ -86,13 +86,16 @@ class TCAgent:
       cls,
       app_name: str = 'test_case_creator_app',
       model_name: str = _AGENT_MODEL,
-      agent_name: str = 'enterprise_assistant',
+      agent_name: str = 'programming_assistant',
+      session_id: str = 'session_id',
       instruction: str = _AGENT_INSTRUCTIONS,
       tools: list[BaseTool] | None = None,
       user_id: str = 'user_tc') -> TCAgent:
     self = TCAgent()
     self.model_name = model_name
     self.agent_name = agent_name
+    self.user_id = user_id
+    self.session_id = session_id
     tools = tools or list(_TOOLS)
     self.root_agent = LlmAgent(
         model=model_name,
@@ -100,19 +103,31 @@ class TCAgent:
         instruction=instruction,
         tools=tools,
     )
-    session_service = InMemorySessionService()
+    self.app_name = app_name
+    self.session_service = InMemorySessionService()
     # Artifact service might not be needed for this example
-    artifacts_service = InMemoryArtifactService()
-    self.session = await session_service.create_session(
-        state={}, app_name=app_name, user_id=user_id)
+    self.artifact_service = InMemoryArtifactService()
+    self.session = await self.session_service.create_session(
+        state={}, app_name=app_name, user_id=user_id,
+        session_id=self.session_id)
 
     self.runner = Runner(
         app_name=app_name,
         agent=self.root_agent,
-        artifact_service=artifacts_service,
-        session_service=session_service)
+        artifact_service=self.artifact_service,
+        session_service=self.session_service)
 
     return self
+
+  async def run_repl(self):
+    await cli.run_repl(
+        app_name=self.app_name,
+        user_id=self.user_id,
+        runner=self.runner,
+        agent=self.root_agent,
+        artifact_service=self.artifact_service,
+        session_service=self.session_service,
+        session=self.session)
 
   async def query_async(self, query_str: str) -> str:
     logging.debug("User Query: '%s'", query_str)
@@ -153,3 +168,12 @@ root_agent = Agent(
         'module information'),
     instruction=_AGENT_INSTRUCTIONS,
     tools=list(_TOOLS))
+
+
+async def main():
+  tc_agent = await TCAgent.create()
+  await tc_agent.run_repl()
+
+
+if __name__ == '__main__':
+  asyncio.run(main())
