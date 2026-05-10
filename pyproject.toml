@@ -1,6 +1,6 @@
 [project]
 name = "langunittest"
-version = "0.1.1"
+version = "0.1.2"
 description = "LLM agent to facilitate the generation of unit test cases."
 authors = [
     {name = "johnklee",email = "puremonkey2001@yahoo.com.tw"}
@@ -11,6 +11,9 @@ dependencies = [
     "langfun (>=0.1.1,<0.2.0)",
     "dotenv (>=0.9.9,<0.10.0)",
     "google-adk (>=1.11.0,<2.0.0)",
+    "rich (>=14.1.0,<15.0.0)",
+    "termcolor (>=3.1.0,<4.0.0)",
+    "gnureadline (>=8.2.13,<9.0.0)",
 ]
 
 

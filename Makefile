@@ -4,6 +4,9 @@ init-repo-setup:
 	poetry install --all-groups
 	pre-commit install
 
+publish-to-pypi: lint
+	poetry publish --build
+
 poetry-export-dev:
 	poetry export --with dev --without-hashes -f requirements.txt -o requirements_dev.txt
 
